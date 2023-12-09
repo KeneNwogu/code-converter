@@ -8,6 +8,7 @@ from sportybet import parse_ticket_to_msport
 
 PORT = int(os.environ.get('PORT', '8443'))
 TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
+WORKER_URL = os.environ.get('WORKER_URL', "")
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -75,12 +76,12 @@ def main():
 
     dp.add_handler(MessageHandler(Filters.text, check_games))
     dp.add_error_handler(error)
-    updater.start_polling()
+    # updater.start_polling()
 
-    # updater.start_webhook(listen="0.0.0.0",
-    #                       port=int(PORT),
-    #                       url_path=TOKEN,
-    #                       webhook_url='https://sporty-bet-bot.herokuapp.com/' + TOKEN)
+    updater.start_webhook(listen="0.0.0.0",
+                          port=int(PORT),
+                          url_path=TOKEN,
+                          webhook_url=WORKER_URL + TOKEN)
     updater.idle()
 
 
