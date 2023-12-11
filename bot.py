@@ -37,9 +37,12 @@ def check_games(update, context):
         update.message.reply_text(f"Started conversion...")
         sportybet_code = update.message.text
         msport_parsed_selections = parse_ticket_to_msport(sportybet_code)
-        msport_ticket = msport_create_ticket(msport_parsed_selections)
-
-        update.message.reply_text(f"Your msport code is: {msport_ticket}")
+        try:
+            msport_ticket = msport_create_ticket(msport_parsed_selections)
+            update.message.reply_text(f"Your msport code is: {msport_ticket}")
+        except Exception as e:
+            logger.error('Update "%s" caused error "%s"', update, e)
+            update.message.reply_text(f"{e}")
 
 
 def convert_game(update, context):

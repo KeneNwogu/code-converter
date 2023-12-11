@@ -34,4 +34,8 @@ def msport_create_ticket(games):
     }
     ticket_object = requests.post(msport_create_url, json=selections, headers=browser_agent_headers).json()
     print(ticket_object)
+
+    if ticket_object.get('innerMsg') == 'invalid':
+        raise Exception(ticket_object.get('message') or "Invalid markets")
+
     return ticket_object.get('data', {}).get('shareCode')
