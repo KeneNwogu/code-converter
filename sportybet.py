@@ -38,3 +38,25 @@ def parse_ticket_to_msport(sporty_bet_code: str):
         "specifier": game.get('specifier'),
         "outcomeId": str(game.get('outcomeId'))
     }, games))
+
+
+def sportybet_create_ticket(games):
+    sporty_create_url = "https://www.sportybet.com/api/ng/orders/share"
+
+    games = list(map(lambda game: {
+        "eventId": game.get('eventId'),
+        "marketId": str(game.get('marketId')),
+        "specifier": game.get('specifier') or None,
+        "outcomeId": str(game.get('outcomeId'))
+    }, games))
+
+    selections = {
+      "selections": games
+    }
+
+    ticket_object = requests.post(sporty_create_url, json=selections, headers=browser_agent_headers).json()
+
+    if ticket_object.get('innerMsg') == 'invalid':
+        raise Exception(ticket_object.get('message') or "Invalid markets")
+
+    return ticket_object.get('data', {}).get('shareCode')
