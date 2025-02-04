@@ -7,9 +7,10 @@ browser_agent_headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 1
 
 def get_games(bet_code: str):
     games_url = url + bet_code
-    games_object = requests.get(games_url, headers=browser_agent_headers).json()
+    games_response = requests.get(games_url, headers=browser_agent_headers)
+    games_object = games_response.json()
 
-    if games_object.get('innerMsg') == "Invalid":
+    if "invalid" in games_object.get('innerMsg', "").lower():
         raise ValueError('Invalid Game Code')
 
     outcomes = games_object['data']['outcomes']
