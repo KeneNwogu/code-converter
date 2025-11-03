@@ -4,7 +4,7 @@ import re
 import random
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
-from msport import msport_create_ticket
+from msport import msport_create_ticket, parse_ticket_to_sportybet
 from sportybet import parse_ticket_to_msport, get_games, sportybet_create_ticket
 from dotenv import load_dotenv
 
@@ -37,6 +37,7 @@ def check_games(update, context):
     last_command = last_commands.get(chat_id)
 
     if last_command == "convert_sporty_code":
+        logger.info("started converting sporty code")
         update.message.reply_text(f"Started conversion...")
         sportybet_code = update.message.text
         try:
@@ -46,12 +47,67 @@ def check_games(update, context):
         except Exception as e:
             logger.error('Update "%s" caused error "%s"', update, e)
             update.message.reply_text(f"{e}")
+            
+    if last_command == "convert_msport_code":
+        logger.info("started converting msport code")
+        update.message.reply_text(f"Started conversion...")
+        msport_code = update.message.text
+        
+        msport_parsed_selections = parse_ticket_to_sportybet(msport_code)
+        try:
+            sporty_ticket = sportybet_create_ticket(msport_parsed_selections)
+            update.message.reply_text(f"Your SportyBet code is: {sporty_ticket}")
+        except Exception as e:
+            logger.error('Update "%s" caused error "%s"', update, e)
+            update.message.reply_text(f"{e}")
 
 
-def convert_game(update, context):
+def convert_sporty_game(update, context):
     chat_id = update.effective_chat.id
     last_commands[chat_id] = "convert_sporty_code"
-    update.message.reply_text("Please enter a sportybet code: ")
+    update.message.reply_text("Please enter a sportybet code:")
+   
+    
+def convert_msport_game(update, context):
+    chat_id = update.effective_chat.id
+    last_commands[chat_id] = "convert_msport_code"
+    update.message.reply_text("Please enter an msport code:")
+
+
+def random_edit(update, context):
+    chat_id = update.effective_chat.id
+    chat = (update.message.text or "").strip()
+    print(chat)
+    # should fit format {command} {sportybet_code} {edit_number}
+    pattern = r'(\S+)\s+(\w+)\s+(\d+)'
+
+    if not re.match(pattern, chat):
+        update.message.reply_text("Invalid format. Please use {command} {sportybet_code} {edit_number}")
+        # show example
+        update.message.reply_text("Example: /random_edit 123456 2")
+        return
+
+    try:
+        command, sportybet_code, edit_number = re.match(pattern, chat).groups()
+        if int(edit_number) < 1:
+            update.message.reply_text("You can only edit a minimum of 1 game")
+            return
+
+        games = get_games(sportybet_code)
+
+        if len(games) < int(edit_number):
+            update.message.reply_text("You can only edit a maximum of the games in the code")
+            return
+
+        edited_games = random.sample(games, int(edit_number))
+        sportybet_code = sportybet_create_ticket(edited_games)
+        update.message.reply_text(f"Your edited sportybet code is: {sportybet_code}")
+        return
+
+    except Exception as e:
+        logger.error('Update "%s" caused error "%s"', update, e)
+        update.message.reply_text(f"{e}")
+        return
 
 
 def random_edit(update, context):
@@ -112,7 +168,8 @@ def main():
 
     dp.add_handler(CommandHandler('start', start))
     # dp.add_handler(CommandHandler('echo', check_games))
-    dp.add_handler(CommandHandler('convert_sporty_code', convert_game))
+    dp.add_handler(CommandHandler('convert_sporty_code', convert_sporty_game))
+    dp.add_handler(CommandHandler('convert_msport_code', convert_msport_game))
     # dp.add_handler(CommandHandler('check_bet', get_user_game))
     # dp.add_handler(CommandHandler('create_issue', create_issue))
 

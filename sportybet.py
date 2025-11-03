@@ -60,4 +60,5 @@ def sportybet_create_ticket(games):
     if ticket_object.get('innerMsg') == 'invalid':
         raise Exception(ticket_object.get('message') or "Invalid markets")
 
+    print(ticket_object)
     return ticket_object.get('data', {}).get('shareCode')
